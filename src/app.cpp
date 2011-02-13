@@ -135,8 +135,29 @@ bool App::create_window()
 
 }
 
+void App::find_app_root()
+{
+	// keep going up directory levels until we find "app.root", or we hit the bottom..
+	char *starting_dir = _getcwd(NULL, 0);
+	while (true) {
+		if (file_exists("app.root")) {
+			char *buf = _getcwd(NULL, 0);
+			_app_root = buf;
+			free(buf);
+			return;
+		}
+		if (_chdir("..") == -1)
+			break;
+	}
+
+	_app_root = starting_dir;
+	free(starting_dir);
+}
+
 bool App::init()
 {
+	find_app_root();
+
 	_width = 1024;
 	_height = 768;
 	if (!create_window())
@@ -149,13 +170,15 @@ bool App::init()
 	int w = _width/2;
 	int h = _height/2;
 
-	_views.push_back(new Window(Viewport(0, 0, w, h)));
-	_views.push_back(new Window(Viewport(w, 0, w, h)));
-	_views.push_back(new Window(Viewport(0, h, w, h)));
-	_views.push_back(new Window(Viewport(w, h, w, h)));
+	_windows.push_back(new Window(Viewport(0, 0, w, h)));
+	_windows.push_back(new Window(Viewport(w, 0, w, h)));
+	_windows.push_back(new Window(Viewport(0, h, w, h)));
+	_windows.push_back(new Window(Viewport(w, h, w, h)));
 
-	for (size_t i = 0; i < _views.size(); ++i)
-		_views[i]->set_active(true);
+	for (size_t i = 0; i < _windows.size(); ++i) {
+		_windows[i]->set_active(true);
+		_windows[i]->set_scene(_scene);
+	}
 
 	_scene->init();
 
@@ -165,7 +188,7 @@ bool App::init()
 bool App::close()
 {
 	delete exch_null(_scene);
-	container_delete(_views);
+	container_delete(_windows);
 	
 	if (!Graphics::instance().close())
 		return false;
@@ -175,8 +198,8 @@ bool App::close()
 
 void App::render()
 {
-	for (size_t i = 0; i < _views.size(); ++i) {
-		Window *cur = _views[i];
+	for (size_t i = 0; i < _windows.size(); ++i) {
+		Window *cur = _windows[i];
 		if (cur->active())
 			cur->render();
 	}
@@ -184,10 +207,7 @@ void App::render()
 
 void App::handle_idle()
 {
-	for (size_t i = 0; i < _views.size(); ++i) {
-		_views[i]->render();
-	}
-
+	render();
 }
 
 bool App::run()
@@ -225,6 +245,7 @@ bool App::run()
 			running_time += num_ticks * dt;
 			accumulator -= num_ticks * dt;
 
+			Graphics::instance().clear();
 			handle_idle();
 			Graphics::instance().present();
 		}

@@ -21,16 +21,18 @@ private:
 	void set_client_size();
 	void handle_idle();
 	void render();
+	void find_app_root();
 	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	static App *_instance;
 
 	Scene *_scene;
-	std::vector<Window *> _views;
+	std::vector<Window *> _windows;
 
 	HINSTANCE _hinstance;
 	HWND _hwnd;
 	DWORD _width;
 	DWORD _height;
+	string2 _app_root;
 };
 
 

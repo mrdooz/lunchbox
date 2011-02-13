@@ -8,6 +8,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lunchbox", "lunchbox.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "celsus", "..\celsus\celsus.vcxproj", "{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{6DAE5895-E988-4805-A43E-83D103389DDA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua", "..\libs\lua-5.1.4\lua\lua.vcxproj", "{003C0C29-0F6A-42BC-AF33-E671F50BE964}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -22,8 +26,15 @@ Global
 		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}.Debug|Win32.Build.0 = Debug|Win32
 		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}.Release|Win32.ActiveCfg = Release|Win32
 		{B0C69191-64BF-4FA6-81C4-1BDF6DDE7CE3}.Release|Win32.Build.0 = Release|Win32
+		{003C0C29-0F6A-42BC-AF33-E671F50BE964}.Debug|Win32.ActiveCfg = Debug|Win32
+		{003C0C29-0F6A-42BC-AF33-E671F50BE964}.Debug|Win32.Build.0 = Debug|Win32
+		{003C0C29-0F6A-42BC-AF33-E671F50BE964}.Release|Win32.ActiveCfg = Release|Win32
+		{003C0C29-0F6A-42BC-AF33-E671F50BE964}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{003C0C29-0F6A-42BC-AF33-E671F50BE964} = {6DAE5895-E988-4805-A43E-83D103389DDA}
 	EndGlobalSection
 EndGlobal

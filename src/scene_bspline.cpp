@@ -172,7 +172,7 @@ SceneBSpline::~SceneBSpline()
 {
 }
 
-bool create_buffers(const Triangles &tris, const Vertices &verts, ID3D11Buffer **vb, ID3D11Buffer **ib)
+static bool create_buffers(const Triangles &tris, const Vertices &verts, StaticBuffer *vb, StaticBuffer *ib)
 {
 	auto *device = Graphics::instance().device();
 	if (FAILED(create_static_vertex_buffer(device, verts.size(), sizeof(Vertices::value_type), verts.data(), vb)))
@@ -198,7 +198,7 @@ bool SceneBSpline::init()
 
 	create_cube(D3DXVECTOR3(0,0,0), D3DXVECTOR3(10, 10, 10), &tris, &verts);
 
-	RETURN_ON_FAIL_BOOL_E(create_buffers(tris, verts, &_vb.buffer.p, &_ib.buffer.p));
+	RETURN_ON_FAIL_BOOL_E(create_buffers(tris, verts, &_vb, &_ib));
 	RETURN_ON_FAIL_BOOL_E(
 		ResourceManager::instance().load_shaders(System::instance().convert_path("effects/test_effect6.fx", System::kDirRelative), "vsMain", NULL, "psMain", 
 		MakeDelegate(this, &SceneBSpline::effect_loaded)));
@@ -261,6 +261,10 @@ bool SceneBSpline::render()
 	D3DXMATRIX mtx;
 	D3DXMATRIX view(kMtxId);
 	D3DXMATRIX proj(kMtxId);
+
+	D3DXMatrixLookAtLH(&view, &D3DXVECTOR3(0,0,-50), &D3DXVECTOR3(0,0,0), &D3DXVECTOR3(0,1,0));
+	D3DXMatrixPerspectiveFovLH(&proj, (float)D3DX_PI / 3, 4 / 3.0f, 1, 100);
+
 	D3DXMatrixTranspose(&mtx, &(view * proj));
 	_effect->set_vs_variable("mtx", mtx);
 	_effect->set_cbuffer();
@@ -273,7 +277,7 @@ bool SceneBSpline::render()
 
 	set_ib(context, _ib);
 	set_vb(context, _vb);
-	context->Draw(_vb.num_elems, 0);
+	context->DrawIndexed(_ib.num_elems, 0, 0);
 
 	return true;
 }

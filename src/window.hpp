@@ -20,6 +20,7 @@ public:
 	bool active() const { return _active; }
 	void set_active(bool active) { _active = active; }
 	void set_camera(Camera *camera);
+	void set_scene(Scene *scene) { _scene = scene; }
 	void render();
 	bool handle_event();
 	void set_viewport(const Viewport &v) { _viewport = v; }

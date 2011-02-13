@@ -5,7 +5,7 @@ float3 light = float3(0,100,100);
 struct vsInput
 {
 	float3 position : POSITION;
-	float3 normal : NORMAL;
+//	float3 normal : NORMAL;
 };
 
 struct vsOutput
@@ -20,7 +20,7 @@ vsOutput vsMain( in vsInput v )
 	vsOutput o;
 	o.position = mul(float4(v.position,1), mtx);
 	o.ws_pos = v.position;
-	o.normal = v.normal; // mul(float4(v.normal,0), mtx);
+	o.normal = float3(0,1,0); //v.normal; // mul(float4(v.normal,0), mtx);
 	return o;
 }
 
