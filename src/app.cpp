@@ -1,32 +1,11 @@
-// lunchbox.cpp : Defines the entry point for the console application.
-//
-
 #include "stdafx.h"
-#include <windows.h>
-#include <celsus/error2.hpp>
-#include <celsus/Logger.hpp>
-#include <celsus/graphics.hpp>
+#include "app.hpp"
+#include "camera.hpp"
+#include "window.hpp"
+#include "scene.hpp"
+#include "scene_bspline.hpp"
 
-class App
-{
-public:
-	bool init();
-	bool close();
-	bool run();
-
-	static App &instance();
-private:
-	App();
-	bool create_window();
-	void set_client_size();
-	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-	static App *_instance;
-
-	HINSTANCE _hinstance;
-	HWND _hwnd;
-	DWORD _width;
-	DWORD _height;
-};
+using namespace std;
 
 App *App::_instance;
 
@@ -39,8 +18,17 @@ App &App::instance()
 
 LRESULT App::wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static App *self = NULL;
+
 	switch( message ) 
 	{
+	case WM_CREATE:
+		{
+			CREATESTRUCT *cs = (CREATESTRUCT *)lParam;
+			self = (App *)cs->lpCreateParams;
+		}
+		break;
+
 	case WM_SIZE:
 		{
 			const int w = LOWORD(lParam);
@@ -95,6 +83,7 @@ LRESULT App::wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 App::App()
 	: _hinstance(NULL)
 	, _hwnd(NULL)
+	, _scene(NULL)
 {
 }
 
@@ -130,11 +119,13 @@ bool App::create_window()
 
 	RETURN_ON_FAIL_BOOL_W(RegisterClassExA(&wcex));
 
-	const UINT window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
+	// a border seems out of place, seeing as we're doing everything else ourselves..
+	//const UINT window_style = WS_VISIBLE | WS_POPUP | WS_OVERLAPPEDWINDOW;
+	const UINT window_style = WS_VISIBLE | WS_POPUP /*| WS_OVERLAPPEDWINDOW*/;
 
 	_hwnd = CreateWindowA(kClassName, "lunchbox editor - magnus österlind - 2010", window_style,
 		CW_USEDEFAULT, CW_USEDEFAULT, _width, _height, NULL, NULL,
-		_hinstance, NULL);
+		_hinstance, (void *)this);
 
 	set_client_size();
 
@@ -154,46 +145,89 @@ bool App::init()
 	if (!Graphics::instance().init_directx(_hwnd, _width, _height))
 		return false;
 
+	_scene = new SceneBSpline();
+	int w = _width/2;
+	int h = _height/2;
+
+	_views.push_back(new Window(Viewport(0, 0, w, h)));
+	_views.push_back(new Window(Viewport(w, 0, w, h)));
+	_views.push_back(new Window(Viewport(0, h, w, h)));
+	_views.push_back(new Window(Viewport(w, h, w, h)));
+
+	for (size_t i = 0; i < _views.size(); ++i)
+		_views[i]->set_active(true);
+
+	_scene->init();
+
 	return true;
 }
 
 bool App::close()
 {
+	delete exch_null(_scene);
+	container_delete(_views);
+	
 	if (!Graphics::instance().close())
 		return false;
 
 	return true;
 }
 
+void App::render()
+{
+	for (size_t i = 0; i < _views.size(); ++i) {
+		Window *cur = _views[i];
+		if (cur->active())
+			cur->render();
+	}
+}
+
+void App::handle_idle()
+{
+	for (size_t i = 0; i < _views.size(); ++i) {
+		_views[i]->render();
+	}
+
+}
+
 bool App::run()
 {
 	MSG msg = {0};
+
+	LARGE_INTEGER freq;
+	QueryPerformanceFrequency(&freq);
+	LARGE_INTEGER cur;
+	QueryPerformanceCounter(&cur);
+	double cur_time = (double)(cur.QuadPart / freq.QuadPart);
+	double accumulator = 0;
+	double running_time = 0;
+	const double dt = 1 / 100.0f;
 
 	while (msg.message != WM_QUIT) {
 		if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		} else {
+
+			QueryPerformanceCounter(&cur);
+			double new_time = (double)cur.QuadPart / freq.QuadPart;
+			double delta_time = new_time - cur_time;
+			cur_time = new_time;
+			accumulator += delta_time;
+
+			// calc the number of ticks of the fixed timestep to step
+			int num_ticks = (int)(accumulator / dt);
+			const double a = delta_time > 0 ? (accumulator - num_ticks * dt) / delta_time : 0;
+
+			if (_scene)
+				_scene->update(running_time, dt, num_ticks, a);
+
+			running_time += num_ticks * dt;
+			accumulator -= num_ticks * dt;
+
+			handle_idle();
 			Graphics::instance().present();
 		}
 	}
 	return true;
 }
-
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
-{
-	App &app = App::instance();
-
-	if (!app.init())
-		return 1;
-
-	if (!app.run())
-		return 1;
-
-	if (!app.close())
-		return 1;
-
-	return 0;
-}
-
-
